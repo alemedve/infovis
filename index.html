@@ -5,13 +5,37 @@
 	<meta charset="utf-8" />
 
   <link href="http://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <!--
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/skeleton.css">
-  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/custom.css">-->
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js" charset="utf-8"></script>
+  <script src="https://code.jquery.com/jquery-2.2.1.min.js" charset="utf-8"></script>
 
 </head>
 <body>
    <h1>Infovis</h1>
+   <h2>Wordcloud de las definiciones de infovis</h2>
+   <div id="vis" style="max-width: 120px"></div>
+
+   <script>
+    var v = [['data', 34], ['information', 29], ['visualization', 28], ['abstract', 12], ['visual', 10], ['space', 8], ['computer', 7], ['cognition', 6], ['representations', 6], ['can', 5]];
+    var scale = d3.scale.linear()
+                  .domain([5, 34])
+                  .range([10, 50]);
+    var colors = [ 'blue', 'green', 'red', 'pink', 'grey', 'yellow','brown','cyan','purple'];
+    d3.shuffle(v);
+    d3.select("div#vis")
+      .selectAll("p")
+      .data(v)
+      .enter()
+      .append("span")
+      .attr("style", function(d) {
+         var num = Math.floor(Math.random() * 8);
+         return "font-size: " + scale(d[1]) + "px; " +  "color: " + colors[num];
+      })
+      .text(function (d,i) { return d[0]+ " "; });
+   </script>
 </body>
 </html>
