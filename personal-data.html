@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Infovis - Trabajo de datos personales</title>
+	<meta charset="utf-8" />
+
+  <link href="http://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/c3.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js" charset="utf-8"></script>
+  <script src="https://code.jquery.com/jquery-2.2.1.min.js" charset="utf-8"></script>
+  <script src="js/underscore.js" charset="utf-8"></script>
+  <script src="js/moment.js" charset="utf-8"></script>
+  <script src="js/geolib.js" charset="utf-8"></script>
+  <script src="js/c3.js" charset="utf-8"></script>
+
+</head>
+<body>
+   <div class="navbar-spacer"></div>
+   <nav class="navbar">
+    <div class="container">
+      <ul class="navbar-list">
+        <li class="navbar-item"><a class="navbar-link" href="index.html">Home</a></li>
+        <li class="navbar-item"><a class="navbar-link navbar-chosen" href="personal-data.html">Datos personales</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="content">
+    <div class="run-chart column-chart"></div>
+    <div class="sleep-chart column-chart"></div>
+    <div class="mixed-chart column-chart"></div>
+    <div id="stacked-chart"></div>
+
+    <style>
+      .column-chart rect {
+        fill: steelblue;
+      }
+
+      .column-chart text {
+        fill: white;
+        font: 10px sans-serif;
+        text-anchor: middle;
+      }
+
+      .axis text {
+        font: 10px sans-serif;
+        fill: black;
+      }
+
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+      }
+
+      .sleep-chart text, .mixed-chart text {
+        fill: black;
+        font: 10px sans-serif;
+        text-anchor: middle;
+      }
+    </style>
+    <script>
+      var margin = {top:40, right:30, bottom:70, left:100},
+        width = 2100 - margin.left - margin.right,
+        height = 540 - margin.top - margin.bottom;
+
+      var x = d3.scale.ordinal().rangeRoundBands([0, width], .1);
+      var y = d3.scale.linear().range([height, 0]);
+
+      var mixeddataFiltered, mixedchart;
+      /* RUNS CHART */
+      var chart = d3.select(".run-chart")
+                  .append("svg")  //append svg element inside .column-chart
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var rundates = [];
+
+      d3.csv("data/runs.csv", function(error, data_csv){
+        var format = d3.time.format("%H:%M:%S:%L");
+
+        var rundata = d3.nest()
+          .key(function(d) { return d.Day; })
+          .rollup(function(d) {
+            var prev = 0;
+            return d3.sum(d, function(g) {
+              if(prev == 0){
+                prev = moment(g['trkpt - time']);
+                return 0;
+              }else{
+                var curr = moment(g['trkpt - time']);
+                var out = curr.diff(prev);
+                prev = curr;
+                return out;
+              }
+            });
+          }).entries(data_csv);
+
+        rundata = _.sortBy(rundata,function(x, y) {
+                      var runX = moment(x['trkpt - time']);
+                      var runY = moment(y['trkpt - time']);
+                      if(runX.isSame(runY)){
+                        return 0;
+                      }
+                      return runX.isAfter(runY);
+                    });
+
+        var data2 = d3.nest()
+          .key(function(d) { return d.Day; })
+          .rollup(function(d) {
+            var prev = 0;
+            return d3.sum(d, function(g) {
+              if(prev == 0){
+                prev = {'latitude': g['trkpt - lat'], 'longitude': g['trkpt - lon']};
+                return 0;
+              }else{
+                var curr = {'latitude': g['trkpt - lat'], 'longitude': g['trkpt - lon']};
+                var out = geolib.getDistance(prev, curr);
+                prev = curr;
+                return out;
+              }
+            });
+          }).entries(data_csv);
+
+        data2 = _.sortBy(data2, function(x, y) {
+                        var runX = moment(x['trkpt - time']);
+                        var runY = moment(y['trkpt - time']);
+                        if(runX.isSame(runY)){
+                          return 0;
+                        }
+                        return runX.isAfter(runY);
+                      });
+
+        rundata.forEach(function(d) {
+          d.day = d.key;
+          rundates.push(d.day);
+          if(d.values < 0){
+            d.runlength = 60000;
+          }else{
+            d.runlength = d.values;
+          }
+          delete d.key;
+          delete d.values;
+        });
+
+      x.domain(rundata.map(function(d){ return d.day }));
+      y.domain([0, d3.max(rundata, function(d){ return d.runlength })]);
+
+      var xAxis = d3.svg.axis()
+          .scale(x)
+          .orient("bottom");
+
+      var yAxis = d3.svg.axis()
+          .scale(y)
+          .orient("left")
+          .ticks(10, "")
+          .tickFormat(function (d) {
+            return ((d/1000)/60).toFixed(0);
+          });
+
+      chart.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+        .selectAll("text")
+        .attr("y", 0)
+        .attr("x", 9)
+        .attr("dy", ".35em")
+        .attr("transform", "rotate(90)")
+        .style("text-anchor", "start");
+
+      chart.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+
+      var barWidth = width / (2*rundata.length);
+
+      var bar = chart.selectAll(".bar")
+          .data(rundata)
+        .enter().append("g")
+          .attr("transform", function(d, i) { return "translate(" + (x(d.day)+ (barWidth/2.5)) + ",0)"; });
+
+      bar.append("rect")
+          .attr("y", function(d) { return y(d.runlength); })
+          .attr("height", function(d) { return height - y(d.runlength); })
+          .attr("width", barWidth - 1);
+
+      bar.append("text")
+          .attr("x", (barWidth / 2))
+          .attr("y", function(d) { return y(d.runlength) + 3; })
+          .attr("dy", ".75em")
+          .text(function(d) {
+              return moment(d.runlength).format("mm'ss''");
+          });
+
+      /* *********** */
+      d3.csv("data/fitbit-Sleeps.csv", function(error, data_csv){
+        var format = d3.time.format("%d-%m-%Y");
+
+        var prerun = [], postrun = [], prevday, meansleep = 0;
+
+        sleepdata = _.each(data_csv, function(da) {
+          if(meansleep == 0){
+            meansleep = Number(da.dormido);
+          }else{
+            meansleep = (meansleep + Number(da.dormido))/2;
+          }
+          if(_.find(rundata, function(run){
+            //console.log(run.day + "<>" + da.fecha);
+            return run.day == da.fecha; })){
+            if(prevday != undefined){
+                prerun.push(prevday);
+            }
+            postrun.push(da);
+          }
+          prevday = da;
+        });
+
+        sleepdata = _.sortBy(sleepdata,function(x, y) {
+                    var sleepX = moment(x['fecha']);
+                    var sleepY = moment(y['fecha']);
+                    if(sleepX.isSame(sleepY)){
+                      return 0;
+                    }
+                    return sleepX.isAfter(sleepY);
+                  });
+
+        mixeddata = _.each(sleepdata, function(da) {
+                    if(aRun = _.find(rundata, function(run){
+                      return run.day == da.fecha; })){
+                      da.run = Number(((aRun.runlength/1000)/60).toFixed(1));
+                      da.dormido = Number(da.dormido);
+                    }
+                  });
+
+        /*
+        /* SLEEP CHART */
+        /*
+        var sleepchart = d3.select(".sleep-chart")
+                    .append("svg")  //append svg element inside .column-chart
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        x.domain(sleepdata.map(function(d){ return d.fecha }));
+        y.domain([0, d3.max(sleepdata, function(d){ return d.dormido })]);
+
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left")
+            .ticks(10, "");
+
+        sleepchart.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+          .selectAll("text")
+          .attr("y", 0)
+          .attr("x", 9)
+          .attr("dy", ".35em")
+          .attr("transform", "rotate(90)")
+          .style("text-anchor", "start");
+
+        sleepchart.append("g")
+          .attr("class", "y axis")
+          .call(yAxis);
+
+        var barWidth = width / (sleepdata.length);
+
+        var bar = sleepchart.selectAll(".bar")
+            .data(sleepdata)
+          .enter().append("g")
+            .attr("transform", function(d, i) { return "translate(" + (x(d.fecha)+ (barWidth/2.5)) + ",0)"; });
+
+        bar.append("rect")
+            .attr("y", function(d) { return y(Number(d.dormido)); })
+            .attr("x", -6)
+            .attr("height", function(d) { return height - y(Number(d.dormido)); })
+            .attr("width", barWidth - 1);
+
+        bar.append("text")
+            .attr("x", (barWidth / 2) + 20)
+            .attr("y", function(d) { return y(Number(d.dormido)) + 9; })
+            .attr("dy", ".75em")
+            .attr("transform", function(d) { return "rotate(90 " + barWidth / 2 + " " + (y(Number(d.dormido)) + 6) + " )" })
+            .text(function(d) {
+                return (d.dormido/60).toFixed(0) + "hs " + (d.dormido%60).toFixed(0) + "min";
+            });
+
+
+        sleepchart.append("line")
+          .style("stroke", "rgba(0,0,0,0.3)")
+          .style("stroke-dasharray", "8,4")
+          .attr("x1", 0)
+          .attr("y1", y(meansleep))
+          .attr("x2", width)
+          .attr("y2", y(meansleep));
+
+        sleepchart.append("text")
+        .attr("x", -30)
+        .attr("y", function(d) { return y(Number(meansleep)) - 5; })
+        .attr("dy", ".75em")
+        .text((meansleep/60).toFixed(0) + "hs " + (meansleep%60).toFixed(0) + "min");
+        */
+
+        mixeddataFiltered = _.filter(mixeddata, function(d) {return d.run != undefined});
+        mixedchart = d3.select(".mixed-chart")
+                    .append("svg")  //append svg element inside .column-chart
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        mixedchart
+          .data(mixeddata)
+          .enter();
+
+          x.domain(mixeddata.map(function(d){ return d.fecha }));
+          y.domain([0, 12*60]);
+
+          var color = d3.scale.linear()
+            .domain([d3.min(mixeddata, function(d){return d.run}), d3.max(mixeddata, function(d){return d.run})])
+            .range(["#99d8c9", "#00441b"]);
+
+          var xAxis = d3.svg.axis()
+              .scale(x)
+              .orient("bottom");
+
+          var yAxis = d3.svg.axis()
+              .scale(y)
+              .orient("left")
+              .ticks(11)
+              .tickFormat(function (d) {
+                return (d/60).toFixed(0);
+              });;
+
+          mixedchart.append("g")
+              .attr("class", "x axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(xAxis)
+            .selectAll("text")
+            .attr("y", 0)
+            .attr("x", 9)
+            .attr("dy", ".35em")
+            .attr("transform", "rotate(90)")
+            .style("text-anchor", "start");
+
+          mixedchart.append("g")
+            .attr("class", "y axis")
+            .call(yAxis);
+
+          var barWidth = width / (mixeddata.length);
+
+          var bar = mixedchart.selectAll(".bar")
+              .data(mixeddata)
+            .enter().append("g")
+              .attr("transform", function(d, i) { return "translate(" + (x(d.fecha)+ (barWidth/2.5)) + ",0)"; });
+
+          bar.append("rect")
+              .attr("y", function(d) { return y(d.dormido); })
+              .attr("height", function(d) { return height - y(d.dormido); })
+              .attr("width", barWidth - 1)
+              .style("fill", function(d){
+                if(d.run != undefined) {
+                  return color(d.run);
+                }else{
+                  return "steelblue";
+                }});
+
+          bar.append("text")
+            .attr("x", (barWidth / 2) + 22 )
+            .attr("y", function(d) { return y(Number(d.dormido)) + 2; })
+            .attr("dy", ".75em")
+            .attr("transform", function(d) { return "rotate(90 " + barWidth / 2 + " " + (y(Number(d.dormido)) + 6) + " )" })
+            .text(function(d) {
+                return (d.dormido/60).toFixed(0) + "hs " + d.dormido%60 + "min";
+            });
+
+          mixedchart.append("line")
+              .style("stroke", "rgba(0,0,0,0.3)")
+              .style("stroke-dasharray", "8,4")
+              .attr("x1", 0)
+              .attr("y1", y(meansleep))
+              .attr("x2", width)
+              .attr("y2", y(meansleep));
+
+          mixedchart.append("text")
+            .attr("x", -30)
+            .attr("y", function(d) { return y(Number(meansleep)) - 5; })
+            .attr("dy", ".75em")
+            .text((meansleep/60).toFixed(0) + "hs " + (meansleep%60).toFixed(0) + "min");
+
+      });
+    });
+
+    /* COMMON */
+      function type(d) {
+        d.runlength =+ d.runlength; // coerce to number
+        return d;
+      }
+
+      // General comparison function for convenience
+      function compare(x, y) {
+        if (x === y) {
+          return 0;
+        }
+        return x > y ? 1 : -1;
+      }
+
+    </script>
+  </div>
+</body>
+</html>
