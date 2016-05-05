@@ -1,4 +1,101 @@
 [
+  {
+    "date" : "2015-10-24",
+    "day" : "Saturday",
+    "asleep" : 421,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "23:52"
+  },
+  {
+    "date" : "2015-10-28",
+    "day" : "Wednesday",
+    "asleep" : 352,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "25:23"
+  },
+  {
+    "date" : "2015-10-30",
+    "day" : "Friday",
+    "asleep" : 361,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "27:26"
+  },
+  {
+    "date" : "2015-11-01",
+    "day" : "Sunday",
+    "asleep" : 435,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "26:24"
+  },
+  {
+    "date" : "2015-11-08",
+    "day" : "Sunday",
+    "asleep" : 194,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "24:25"
+  },
+  {
+    "date" : "2015-11-14",
+    "day" : "Saturday",
+    "asleep" : 253,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "22:02"
+  },
+  {
+    "date" : "2015-11-15",
+    "day" : "Sunday",
+    "asleep" : 400,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "30:19"
+  },
+  {
+    "date" : "2015-11-19",
+    "day" : "Thursday",
+    "asleep" : 481,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "20:49"
+  },
+  {
+    "date" : "2015-11-21",
+    "day" : "Saturday",
+    "asleep" : 432,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "26:44"
+  },
+  {
+    "date" : "2015-11-27",
+    "day" : "Friday",
+    "asleep" : 315,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "28:04"
+  },
+  {
+    "date" : "2015-11-29",
+    "day" : "Sunday",
+    "asleep" : 391,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "33:33"
+  },
+  {
+    "date" : "2015-12-06",
+    "day" : "Sunday",
+    "asleep" : 430,
+    "times-awake" : 0,
+    "time-awake" : 0,
+    "run": "31:33"
+  },
+
     {
       "date" : "2015-12-08",
       "day" : "Tuesday",

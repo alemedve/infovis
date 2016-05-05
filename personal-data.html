@@ -14,6 +14,8 @@
   <script src="https://code.jquery.com/jquery-2.2.1.min.js" charset="utf-8"></script>
   <script src="js/underscore.js" charset="utf-8"></script>
   <script src="js/moment.js" charset="utf-8"></script>
+  <script src="js/crossfilter.js" type="text/javascript"></script>
+  <script src="js/dc.js" type="text/javascript"></script>
   <script src="js/geolib.js" charset="utf-8"></script>
   <script src="js/c3.js" charset="utf-8"></script>
 
@@ -33,6 +35,20 @@
     <div class="sleep-chart column-chart"></div>
     <div class="mixed-chart column-chart"></div>
     <div id="stacked-chart"></div>
+
+    <div class="offset-by-one column">
+      <div>
+        <div class="columns three">
+          Días que corrí:
+          <div id="chart-ring-day"></div>
+        </div>
+        <div class="columns three">
+          Horas que dormí por noche:
+          <div id="chart-sleep-proportion"></div>
+        </div>
+      </div>
+      <div id="chart-run"></div>
+    </div>
 
     <style>
       .column-chart rect {
@@ -419,6 +435,67 @@
       }
 
     </script>
+
+    <script>
+
+        //http://bl.ocks.org/kevinkraus92/51ada03f299b4f1059471dc42948f2d2
+        //https://dc-js.github.io/dc.js/
+        //http://www.codeproject.com/Articles/693841/Making-Dashboards-with-Dc-js-Part-1-Using-Crossfil
+
+        $.getJSON('data/sleeprun.json', function(data){
+          var runDayRingChart   = dc.pieChart("#chart-ring-day"),
+          runChart  = dc.barChart("#chart-run");
+          sleepProportionChart = dc.pieChart("#chart-sleep-proportion");
+          //spenderRowChart = dc.rowChart("#chart-row-spenders"),
+          //mostExpensiveYear = dc.boxPlot("#chart-box-plot");
+
+          console.log(data);
+          var ndx = crossfilter(data),
+          runDim  = ndx.dimension(function(d) { return d.run; }),
+          sleepDim = ndx.dimension(function(d) { return d.asleep; }),
+          dateDim  = ndx.dimension(function(d) { return d.date; }),
+          weekDay = ndx.dimension(function(d) { return d.day; }),
+          runDays  = runDim.filter(function(d) { if(d != "0") return d;  } ),
+          perDay  = weekDay.group().reduceCount(),
+          perInterval = sleepDim.group(function(d) { return Math.floor(d/60) }).reduceCount();
+
+
+          runDayRingChart
+              .width(200).height(200)
+              .dimension(weekDay)
+              .group(perDay)
+              .innerRadius(40);
+
+          runChart
+              .width(1000).height(300)
+              .dimension(weekDay)
+              .group(perDay)
+              .x(d3.scale.ordinal().domain(["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]))
+              .xUnits(dc.units.ordinal)
+              .elasticX(true)
+              .elasticY(true);
+
+          runChart.yAxis().ticks(4);
+
+          sleepProportionChart
+              .width(200).height(200)
+              .dimension(sleepDim)
+              .group(perInterval)
+              .innerRadius(40);
+
+          dc.renderAll();
+
+          function print_filter(filter){
+          	var f=eval(filter);
+          	if (typeof(f.length) != "undefined") {}else{}
+          	if (typeof(f.top) != "undefined") {f=f.top(Infinity);}else{}
+          	if (typeof(f.dimension) != "undefined") {f=f.dimension(function(d) { return "";}).top(Infinity);}else{}
+          	console.log(filter+"("+f.length+") = "+JSON.stringify(f).replace("[","[\n\t").replace(/}\,/g,"},\n\t").replace("]","\n]"));
+          }
+        });
+
+    </script>
+
   </div>
 </body>
 </html>
