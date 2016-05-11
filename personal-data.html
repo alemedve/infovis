@@ -35,14 +35,14 @@
     <h4>Does sleep time influence my running performance?</h4>
     <h4>Does running improve my sleep?</h4>
     <p>
-      Based on my Fitbit HR data and Nike+ running app data, I try to figure if sleep influences my runs and the other way around. Also, I show some other representations of the data.
+      Based on my Fitbit HR data and Nike+ running app data, I try to figure out if sleep influences my runs and/or the other way around. Also, I show some other representations of the data.
       <br>
       These visualizations use differente frameworks/libraries, just to give them a try.
     </p>
 
     <h3><b>The data source and preprocessing</b></h3>
     <p>
-      The Fitbit data was exported from the Fitbit Webapp. Nike+ data was more tricky, as it does not provide a way of exporting it. I used <a href="https://jkili.wordpress.com/2013/01/08/nike-exporter-v1-4/" target="_blank">this tool</a>. I also used Open Refine to process a little some data.
+      The Fitbit data was exported from the Fitbit Webapp. Nike+ data was more tricky, as it does not provide a way for exporting. I used <a href="https://jkili.wordpress.com/2013/01/08/nike-exporter-v1-4/" target="_blank">this tool</a>. I also used Open Refine to process a little some of the data.
       <br>
       I use the <a href="http://underscorejs.org" target="_blank">UnderscoreJS</a> library for some common array/collections functions.
     </p>
@@ -109,7 +109,7 @@
 
     <script type="text/javascript">
       var svg = dimple.newSvg("#scatter-chart", 600, 580);
-      d3.json("/data/sleeprun.json", function (data) {
+      d3.json("data/sleeprun.json", function (data) {
         data = _.map(data, function(d) {
                               var tmp = d.run.split(":");
                               d.run = ((Number(tmp[0])*60 + Number(tmp[0]))/60).toFixed(2);
@@ -466,7 +466,6 @@
           //spenderRowChart = dc.rowChart("#chart-row-spenders"),
           //mostExpensiveYear = dc.boxPlot("#chart-box-plot");
 
-          console.log(data);
           var ndx = crossfilter(data),
           runDim  = ndx.dimension(function(d) { return d.run; }),
           sleepDim = ndx.dimension(function(d) { return d.asleep; }),
