@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/skeleton.css">
   <link rel="stylesheet" href="css/custom.css">
   <link rel="stylesheet" href="css/c3.css">
+  <link rel="stylesheet" href="css/dc.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js" charset="utf-8"></script>
   <script src="https://code.jquery.com/jquery-2.2.1.min.js" charset="utf-8"></script>
@@ -466,6 +467,12 @@
           //spenderRowChart = dc.rowChart("#chart-row-spenders"),
           //mostExpensiveYear = dc.boxPlot("#chart-box-plot");
 
+          data.forEach(function (d) {
+            d.run = Number(d.run.split(':')[0]);
+          });
+
+
+          console.log(data);
           var ndx = crossfilter(data),
           runDim  = ndx.dimension(function(d) { return d.run; }),
           sleepDim = ndx.dimension(function(d) { return d.asleep; }),
@@ -473,6 +480,7 @@
           weekDay = ndx.dimension(function(d) { return d.day; }),
           runDays  = runDim.filter(function(d) { if(d != "0") return d;  } ),
           perDay  = weekDay.group().reduceCount(),
+          runPerDay = weekDay.group().reduceSum(function(d) {return d.run;}),
           perInterval = sleepDim.group(function(d) { return Math.floor(d/60) }).reduceCount();
 
 
@@ -485,7 +493,7 @@
           runChart
               .width(1000).height(300)
               .dimension(weekDay)
-              .group(perDay)
+              .group(runPerDay)
               .x(d3.scale.ordinal().domain(["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]))
               .xUnits(dc.units.ordinal)
               .elasticX(true)
