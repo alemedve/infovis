@@ -478,9 +478,11 @@
           sleepDim = ndx.dimension(function(d) { return d.asleep; }),
           dateDim  = ndx.dimension(function(d) { return d.date; }),
           weekDay = ndx.dimension(function(d) { return d.day; }),
+          weekDay2 = ndx.dimension(function(d) { return d.day; }),
           runDays  = runDim.filter(function(d) { if(d != "0") return d;  } ),
           perDay  = weekDay.group().reduceCount(),
           runPerDay = weekDay.group().reduceSum(function(d) {return d.run;}),
+          runPerDay2 = weekDay2.group().reduceSum(function(d) {return d.run;}),
           perInterval = sleepDim.group(function(d) { return Math.floor(d/60) }).reduceCount();
 
 
@@ -492,9 +494,9 @@
 
           runChart
               .width(1000).height(300)
-              .dimension(weekDay)
-              .group(runPerDay)
-              .x(d3.scale.ordinal().domain(["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]))
+              .dimension(weekDay2)
+              .group(runPerDay2)
+              .x(d3.scale.ordinal())
               .xUnits(dc.units.ordinal)
               .elasticX(true)
               .elasticY(true);
